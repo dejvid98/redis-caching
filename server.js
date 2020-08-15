@@ -5,6 +5,7 @@ const db = require('./db');
 const redis = require('redis-node');
 const app = express();
 const client = redis.createClient();
+const axios = require('axios');
 
 app.use(cors());
 app.use(express.json());
@@ -30,8 +31,25 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/addresses', (req, res) => {
+  client.hget('addresses', 'addresslist', async (err, status) => {
+    if (!status) {
+      const resp = await axios.get(
+        'https://fakerapi.it/api/v1/addresses?_quantity=50'
+      );
+      console.log(resp.data);
+      client.hset('users', 'userlist', JSON.stringify(resp.data));
+      res.send(resp.data);
+      return;
+    } else {
+      res.send(JSON.parse(status));
+      return;
+    }
+  });
+});
+
 app.get('/cache', (req, res) => {
-  client.hget('users', 'userlist', (err, status) => {
+  client.hget('addresses', 'addresslist', (err, status) => {
     res.send(JSON.parse(status));
   });
 });
